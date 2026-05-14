@@ -1,0 +1,2 @@
+Create a new Vue project called "my-dashboard".
+Use Vite with TypeScript and Vue Router. Then add Vuetify 3 with Material Design Icons, and also install chart.js and vue-chart.js for data visualizations. Set everything up and open the project. 
