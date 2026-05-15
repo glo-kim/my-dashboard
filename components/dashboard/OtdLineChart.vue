@@ -102,7 +102,7 @@ const chartOptions = {
       grid: { color: 'rgba(0,0,0,0.06)' },
       ticks: {
         font: { size: 11 },
-        callback: (val: number) => `${val}%`,
+        callback: (val: string | number) => `${val}%`,
       },
     },
   },

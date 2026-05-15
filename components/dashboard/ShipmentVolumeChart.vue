@@ -11,7 +11,7 @@
       </v-btn-toggle>
     </v-card-title>
     <v-card-text class="pa-4">
-      <Bar :data="chartData" :options="chartOptions" :style="{ height: '320px' }" />
+      <Bar :data="chartData as any" :options="chartOptions as any" :style="{ height: '320px' }" />
     </v-card-text>
   </v-card>
 </template>
