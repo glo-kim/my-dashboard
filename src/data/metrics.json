@@ -436,6 +436,43 @@
     "early": 35,
     "total": 1847
   },
+  "regionsByMonth": {
+    "2026-01": [
+      { "region": "Northeast", "shipments": 385, "onTimePercent": 96.1, "avgTransitDays": 2.7, "exceptions": 2, "revenue": 268400 },
+      { "region": "Southeast", "shipments": 362, "onTimePercent": 94.8, "avgTransitDays": 3.0, "exceptions": 4, "revenue": 245100 },
+      { "region": "Midwest", "shipments": 348, "onTimePercent": 94.2, "avgTransitDays": 3.3, "exceptions": 3, "revenue": 226500 },
+      { "region": "Southwest", "shipments": 275, "onTimePercent": 92.0, "avgTransitDays": 3.5, "exceptions": 5, "revenue": 183200 },
+      { "region": "West", "shipments": 355, "onTimePercent": 93.9, "avgTransitDays": 3.2, "exceptions": 3, "revenue": 244800 }
+    ],
+    "2026-02": [
+      { "region": "Northeast", "shipments": 398, "onTimePercent": 95.7, "avgTransitDays": 2.8, "exceptions": 3, "revenue": 278200 },
+      { "region": "Southeast", "shipments": 375, "onTimePercent": 94.3, "avgTransitDays": 3.1, "exceptions": 4, "revenue": 254700 },
+      { "region": "Midwest", "shipments": 360, "onTimePercent": 93.5, "avgTransitDays": 3.4, "exceptions": 5, "revenue": 234100 },
+      { "region": "Southwest", "shipments": 285, "onTimePercent": 91.8, "avgTransitDays": 3.6, "exceptions": 6, "revenue": 190600 },
+      { "region": "West", "shipments": 368, "onTimePercent": 93.1, "avgTransitDays": 3.3, "exceptions": 4, "revenue": 253200 }
+    ],
+    "2026-03": [
+      { "region": "Northeast", "shipments": 405, "onTimePercent": 95.9, "avgTransitDays": 2.7, "exceptions": 2, "revenue": 282900 },
+      { "region": "Southeast", "shipments": 382, "onTimePercent": 94.5, "avgTransitDays": 3.0, "exceptions": 5, "revenue": 259800 },
+      { "region": "Midwest", "shipments": 365, "onTimePercent": 94.0, "avgTransitDays": 3.3, "exceptions": 3, "revenue": 237600 },
+      { "region": "Southwest", "shipments": 292, "onTimePercent": 91.5, "avgTransitDays": 3.5, "exceptions": 6, "revenue": 195300 },
+      { "region": "West", "shipments": 372, "onTimePercent": 93.6, "avgTransitDays": 3.2, "exceptions": 4, "revenue": 256700 }
+    ],
+    "2026-04": [
+      { "region": "Northeast", "shipments": 410, "onTimePercent": 95.2, "avgTransitDays": 2.9, "exceptions": 3, "revenue": 285400 },
+      { "region": "Southeast", "shipments": 386, "onTimePercent": 93.9, "avgTransitDays": 3.1, "exceptions": 5, "revenue": 262100 },
+      { "region": "Midwest", "shipments": 369, "onTimePercent": 93.6, "avgTransitDays": 3.4, "exceptions": 4, "revenue": 240200 },
+      { "region": "Southwest", "shipments": 295, "onTimePercent": 91.0, "avgTransitDays": 3.7, "exceptions": 7, "revenue": 196800 },
+      { "region": "West", "shipments": 375, "onTimePercent": 93.0, "avgTransitDays": 3.3, "exceptions": 5, "revenue": 258400 }
+    ],
+    "2026-05": [
+      { "region": "Northeast", "shipments": 412, "onTimePercent": 95.4, "avgTransitDays": 2.8, "exceptions": 3, "revenue": 287650 },
+      { "region": "Southeast", "shipments": 389, "onTimePercent": 94.1, "avgTransitDays": 3.1, "exceptions": 5, "revenue": 264320 },
+      { "region": "Midwest", "shipments": 371, "onTimePercent": 93.8, "avgTransitDays": 3.4, "exceptions": 4, "revenue": 241780 },
+      { "region": "Southwest", "shipments": 298, "onTimePercent": 91.2, "avgTransitDays": 3.6, "exceptions": 7, "revenue": 198430 },
+      { "region": "West", "shipments": 377, "onTimePercent": 93.3, "avgTransitDays": 3.3, "exceptions": 4, "revenue": 259910 }
+    ]
+  },
   "regions": [
     {
       "region": "Northeast",

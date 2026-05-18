@@ -3,8 +3,18 @@
     <v-card-title class="d-flex align-center justify-space-between pa-4 pb-2">
       <div>
         <div class="text-h6 font-weight-bold">Regional Performance</div>
-        <div class="text-caption text-medium-emphasis">Aggregated by region — current month</div>
+        <div class="text-caption text-medium-emphasis">Aggregated by region — {{ selectedMonthLabel }}</div>
       </div>
+      <v-select
+        v-model="selectedMonth"
+        :items="monthOptions"
+        item-title="label"
+        item-value="value"
+        density="compact"
+        variant="outlined"
+        hide-details
+        style="max-width: 160px;"
+      />
     </v-card-title>
     <v-card-text class="pa-4 pt-0">
       <v-data-table
@@ -63,9 +73,26 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import metrics from '@/src/data/metrics.json'
 
-const regions = metrics.regions
+const regionsByMonth = metrics.regionsByMonth as Record<string, typeof metrics.regions>
+
+const monthOptions = [
+  { label: 'Jan 2026', value: '2026-01' },
+  { label: 'Feb 2026', value: '2026-02' },
+  { label: 'Mar 2026', value: '2026-03' },
+  { label: 'Apr 2026', value: '2026-04' },
+  { label: 'May 2026', value: '2026-05' },
+]
+
+const selectedMonth = ref('2026-05')
+
+const selectedMonthLabel = computed(() =>
+  monthOptions.find((m) => m.value === selectedMonth.value)?.label ?? ''
+)
+
+const regions = computed(() => regionsByMonth[selectedMonth.value] ?? [])
 
 const headers = [
   { title: 'Region', key: 'region', sortable: true },
