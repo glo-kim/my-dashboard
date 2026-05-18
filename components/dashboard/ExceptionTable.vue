@@ -5,29 +5,23 @@
         <div class="text-h6 font-weight-bold">Exceptions Log</div>
         <div class="text-caption text-medium-emphasis">Active and recently resolved exceptions</div>
       </div>
-      <div class="d-flex ga-2">
-        <v-select
-          v-model="filterType"
-          :items="typeOptions"
-          label="Type"
-          density="compact"
-          variant="outlined"
-          clearable
-          hide-details
-          style="min-width: 150px"
-        />
-        <v-select
-          v-model="filterStatus"
-          :items="statusOptions"
-          label="Status"
-          density="compact"
-          variant="outlined"
-          clearable
-          hide-details
-          style="min-width: 150px"
-        />
-      </div>
+      <v-select
+        v-model="filterType"
+        :items="typeOptions"
+        label="Type"
+        density="compact"
+        variant="outlined"
+        clearable
+        hide-details
+        style="max-width: 160px;"
+      />
     </v-card-title>
+    <v-tabs v-model="filterStatus" density="compact" class="px-4">
+      <v-tab value="all">All ({{ statusCounts.all }})</v-tab>
+      <v-tab value="Open">Open ({{ statusCounts.open }})</v-tab>
+      <v-tab value="In Progress">In Progress ({{ statusCounts.inProgress }})</v-tab>
+      <v-tab value="Resolved">Resolved ({{ statusCounts.resolved }})</v-tab>
+    </v-tabs>
     <v-card-text class="pa-4 pt-0">
       <v-data-table
         v-model:expanded="expanded"
@@ -104,10 +98,16 @@ import metrics from '@/src/data/metrics.json'
 const exceptions = metrics.exceptions
 const expanded = ref<string[]>([])
 const filterType = ref<string | null>(null)
-const filterStatus = ref<string | null>(null)
+const filterStatus = ref('all')
 
 const typeOptions = ['Delayed', 'Damaged', 'Address Issue', 'Customs Hold', 'Lost']
-const statusOptions = ['Open', 'In Progress', 'Resolved']
+
+const statusCounts = computed(() => ({
+  all: exceptions.length,
+  open: exceptions.filter((e) => e.status === 'Open').length,
+  inProgress: exceptions.filter((e) => e.status === 'In Progress').length,
+  resolved: exceptions.filter((e) => e.status === 'Resolved').length,
+}))
 
 const headers = [
   { title: 'Shipment ID', key: 'id', sortable: true },
@@ -123,8 +123,13 @@ const headers = [
 const filteredExceptions = computed(() => {
   return exceptions.filter((e) => {
     if (filterType.value && e.type !== filterType.value) return false
-    if (filterStatus.value && e.status !== filterStatus.value) return false
+    if (filterStatus.value !== 'all' && e.status !== filterStatus.value) return false
     return true
+  }).sort((a, b) => {
+    const statusPriority: Record<string, number> = { 'Open': 0, 'In Progress': 1, 'Resolved': 2 }
+    const statusDiff = (statusPriority[a.status] ?? 3) - (statusPriority[b.status] ?? 3)
+    if (statusDiff !== 0) return statusDiff
+    return b.daysOpen - a.daysOpen
   })
 })
 
