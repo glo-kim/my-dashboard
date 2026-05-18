@@ -1,8 +1,15 @@
 <template>
   <v-card elevation="0" border rounded="lg" class="fill-height">
-    <v-card-title class="pa-4 pb-0">
-      <div class="text-h6 font-weight-bold">On-Time Delivery Trend</div>
-      <div class="text-caption text-medium-emphasis">Weekly OTD % — last 12 weeks</div>
+    <v-card-title class="d-flex align-center justify-space-between pa-4 pb-0">
+      <div>
+        <div class="text-h6 font-weight-bold">On-Time Delivery Trend</div>
+        <div class="text-caption text-medium-emphasis">Weekly OTD % — last {{ weekRange }} weeks</div>
+      </div>
+      <v-btn-toggle v-model="weekRange" density="compact" mandatory variant="outlined" divided>
+        <v-btn :value="6" size="small">6W</v-btn>
+        <v-btn :value="12" size="small">12W</v-btn>
+        <v-btn :value="24" size="small">24W</v-btn>
+      </v-btn-toggle>
     </v-card-title>
     <v-card-text class="pa-4">
       <Line :data="chartData" :options="chartOptions" :style="{ height: '280px' }" />
@@ -11,6 +18,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -28,41 +36,47 @@ import metrics from '@/src/data/metrics.json'
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
 const weeklyOtd = metrics.weeklyOtd
+const weekRange = ref(6)
 
-const labels = weeklyOtd.map((w) => {
-  const d = new Date(w.start + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+const filteredData = computed(() => weeklyOtd.slice(-weekRange.value))
+
+const chartData = computed(() => {
+  const data = filteredData.value
+  const labels = data.map((w) => {
+    const d = new Date(w.start + 'T00:00:00')
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  })
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'OTD %',
+        data: data.map((w) => w.otdPercent),
+        borderColor: '#1B2A4A',
+        backgroundColor: 'rgba(27, 42, 74, 0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#1B2A4A',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0.3,
+        fill: true,
+      },
+      {
+        label: '95% Target',
+        data: Array(data.length).fill(95),
+        borderColor: '#E53935',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        fill: false,
+      },
+    ],
+  }
 })
-
-const chartData = {
-  labels,
-  datasets: [
-    {
-      label: 'OTD %',
-      data: weeklyOtd.map((w) => w.otdPercent),
-      borderColor: '#1B2A4A',
-      backgroundColor: 'rgba(27, 42, 74, 0.08)',
-      borderWidth: 2.5,
-      pointBackgroundColor: '#1B2A4A',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      tension: 0.3,
-      fill: true,
-    },
-    {
-      label: '95% Target',
-      data: Array(weeklyOtd.length).fill(95),
-      borderColor: '#E53935',
-      borderWidth: 1.5,
-      borderDash: [6, 4],
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      fill: false,
-    },
-  ],
-}
 
 const chartOptions = {
   responsive: true,

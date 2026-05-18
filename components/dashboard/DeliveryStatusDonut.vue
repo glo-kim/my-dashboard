@@ -39,10 +39,51 @@ ChartJS.register(ArcElement, Tooltip, Legend)
 const deliveryStatus = metrics.deliveryStatus
 
 const colors = {
-  onTime: '#43A047',
-  late: '#E53935',
-  early: '#1976D2',
+  onTime: '#0077B6',
+  late: '#D62828',
+  early: '#F77F00',
 }
+
+function createDiagonalPattern(color: string): CanvasPattern {
+  const canvas = document.createElement('canvas')
+  canvas.width = 10
+  canvas.height = 10
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = color
+  ctx.fillRect(0, 0, 10, 10)
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(0, 10)
+  ctx.lineTo(10, 0)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(-2, 2)
+  ctx.lineTo(2, -2)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(8, 12)
+  ctx.lineTo(12, 8)
+  ctx.stroke()
+  return ctx.createPattern(canvas, 'repeat')!
+}
+
+function createDotPattern(color: string): CanvasPattern {
+  const canvas = document.createElement('canvas')
+  canvas.width = 10
+  canvas.height = 10
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = color
+  ctx.fillRect(0, 0, 10, 10)
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'
+  ctx.beginPath()
+  ctx.arc(5, 5, 2, 0, Math.PI * 2)
+  ctx.fill()
+  return ctx.createPattern(canvas, 'repeat')!
+}
+
+const latePattern = createDiagonalPattern(colors.late)
+const earlyPattern = createDotPattern(colors.early)
 
 const legendItems = [
   { label: 'On-Time', value: deliveryStatus.onTime, color: colors.onTime },
@@ -55,8 +96,9 @@ const chartData = {
   datasets: [
     {
       data: [deliveryStatus.onTime, deliveryStatus.late, deliveryStatus.early],
-      backgroundColor: [colors.onTime, colors.late, colors.early],
-      borderWidth: 0,
+      backgroundColor: [colors.onTime, latePattern, earlyPattern],
+      borderColor: ['#005F8A', '#A31D1D', '#C56200'],
+      borderWidth: 2,
       hoverOffset: 6,
     },
   ],
