@@ -74,6 +74,7 @@
             icon="mdi-filter-variant"
             variant="text"
             size="small"
+            color="primary"
             @click="filterDrawer = !filterDrawer"
           />
         </v-badge>
@@ -90,59 +91,100 @@
         <div class="d-flex align-center justify-space-between mb-4">
           <div class="text-subtitle-1 font-weight-bold">Filters</div>
           <v-btn
-            v-if="hasActiveFilters"
             variant="text"
             size="small"
+            color="primary"
             prepend-icon="mdi-filter-remove"
+            :disabled="!hasActiveFilters"
             @click="resetFilters"
           >
             Reset
           </v-btn>
         </div>
-        <v-select
-          v-model="selectedRegion"
-          :items="regionOptions"
-          item-title="label"
-          item-value="value"
-          label="Region"
-          density="compact"
-          variant="outlined"
-          hide-details
-          prepend-inner-icon="mdi-map-marker-outline"
-          class="mb-4"
-        />
-        <v-select
-          v-model="selectedMode"
-          :items="modeOptions"
-          item-title="label"
-          item-value="value"
-          label="Shipment Mode"
-          density="compact"
-          variant="outlined"
-          hide-details
-          prepend-inner-icon="mdi-truck-outline"
-          class="mb-4"
-        />
+        <v-expansion-panels v-model="filterPanels" multiple flat>
+          <v-expansion-panel value="region">
+            <v-expansion-panel-title class="px-0 py-2 text-body-2 font-weight-bold">
+                <v-checkbox
+                  class="filter-checkbox mr-2"
+                  density="compact"
+                  hide-details
+                  :model-value="selectedRegion.length === regionOptions.length"
+                  :indeterminate="selectedRegion.length > 0 && selectedRegion.length < regionOptions.length"
+                  @update:model-value="toggleSelectAll('region', $event)"
+                  aria-label="Select all regions"
+                />
+                <v-icon size="small" class="mr-2">mdi-map-marker-outline</v-icon>
+                <span>Region</span>
+                <template #actions="{ expanded }">
+                  <v-icon :icon="expanded ? 'mdi-minus' : 'mdi-plus'" size="small" />
+                </template>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text class="filter-panel-body">
+              <v-checkbox
+                v-for="r in regionOptions"
+                :key="r"
+                :label="r"
+                :model-value="selectedRegion.includes(r)"
+                density="compact"
+                hide-details
+                class="filter-checkbox"
+                @update:model-value="toggleFilter('region', r, $event)"
+              />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+          <v-expansion-panel value="mode">
+            <v-expansion-panel-title class="px-0 py-2 text-body-2 font-weight-bold">
+                <v-checkbox
+                  class="filter-checkbox mr-2"
+                  density="compact"
+                  hide-details
+                  :model-value="selectedMode.length === modeOptions.length"
+                  :indeterminate="selectedMode.length > 0 && selectedMode.length < modeOptions.length"
+                  @update:model-value="toggleSelectAll('mode', $event)"
+                  aria-label="Select all shipment modes"
+                />
+                <v-icon size="small" class="mr-2">mdi-truck-outline</v-icon>
+                <span>Shipment Mode</span>
+                <template #actions="{ expanded }">
+                  <v-icon :icon="expanded ? 'mdi-minus' : 'mdi-plus'" size="small" />
+                </template>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text class="filter-panel-body">
+              <v-checkbox
+                v-for="m in modeOptions"
+                :key="m"
+                :label="m"
+                :model-value="selectedMode.includes(m)"
+                density="compact"
+                hide-details
+                class="filter-checkbox"
+                @update:model-value="toggleFilter('mode', m, $event)"
+              />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
         <v-divider class="my-4" />
         <div v-if="hasActiveFilters" class="text-caption text-medium-emphasis">
           <div class="font-weight-medium mb-2">Active filters:</div>
           <v-chip
-            v-if="selectedRegion"
+            v-for="r in selectedRegion"
+            :key="'region-' + r"
             size="small"
             closable
             class="mr-1 mb-1"
-            @click:close="selectedRegion = null"
+            @click:close="selectedRegion = selectedRegion.filter(v => v !== r)"
           >
-            {{ selectedRegion }}
+            {{ r }}
           </v-chip>
           <v-chip
-            v-if="selectedMode"
+            v-for="m in selectedMode"
+            :key="'mode-' + m"
             size="small"
             closable
             class="mr-1 mb-1"
-            @click:close="selectedMode = null"
+            @click:close="selectedMode = selectedMode.filter(v => v !== m)"
           >
-            {{ selectedMode }}
+            {{ m }}
           </v-chip>
         </div>
         <div v-else class="text-caption text-medium-emphasis">
@@ -166,34 +208,39 @@ const drawer = ref(true)
 const rail = ref(false)
 const activeNav = ref('overview')
 const filterDrawer = ref(false)
+const filterPanels = ref(['region', 'mode'])
 
 const isDark = computed(() => theme.global.current.value.dark)
 
 // --- Filter state ---
-const selectedRegion = ref<string | null>(null)
-const selectedMode = ref<string | null>(null)
+const selectedRegion = ref<string[]>([])
+const selectedMode = ref<string[]>([])
 
-const regionOptions = [
-  { label: 'All Regions', value: null },
-  { label: 'Northeast', value: 'Northeast' },
-  { label: 'Southeast', value: 'Southeast' },
-  { label: 'Midwest', value: 'Midwest' },
-  { label: 'Southwest', value: 'Southwest' },
-  { label: 'West', value: 'West' },
-]
+const regionOptions = ['Northeast', 'Southeast', 'Midwest', 'Southwest', 'West']
+const modeOptions = ['LTL', 'FTL', 'Parcel']
 
-const modeOptions = [
-  { label: 'All Modes', value: null },
-  { label: 'LTL', value: 'LTL' },
-  { label: 'FTL', value: 'FTL' },
-  { label: 'Parcel', value: 'Parcel' },
-]
-
-const hasActiveFilters = computed(() => !!selectedRegion.value || !!selectedMode.value)
+const hasActiveFilters = computed(() => selectedRegion.value.length > 0 || selectedMode.value.length > 0)
 
 function resetFilters() {
-  selectedRegion.value = null
-  selectedMode.value = null
+  selectedRegion.value = []
+  selectedMode.value = []
+}
+
+function toggleFilter(key: 'region' | 'mode', value: string, checked: boolean | null) {
+  const arr = key === 'region' ? selectedRegion : selectedMode
+  if (checked) {
+    if (!arr.value.includes(value)) arr.value = [...arr.value, value]
+  } else {
+    arr.value = arr.value.filter((v) => v !== value)
+  }
+}
+// Select all/none for region or mode
+function toggleSelectAll(key: 'region' | 'mode', checked: boolean | null) {
+  if (key === 'region') {
+    selectedRegion.value = checked ? [...regionOptions] : []
+  } else {
+    selectedMode.value = checked ? [...modeOptions] : []
+  }
 }
 
 provide('selectedRegion', selectedRegion)
@@ -244,5 +291,15 @@ function scrollTo(section: string) {
 }
 .v-navigation-drawer .v-icon {
   color: rgba(255, 255, 255, 0.7);
+}
+.filter-panel-body .v-expansion-panel-text__wrapper {
+  padding: 0 !important;
+}
+.filter-checkbox .v-label {
+  font-size: 0.8125rem;
+}
+.filter-checkbox {
+  margin-top: -4px;
+  margin-bottom: -4px;
 }
 </style>

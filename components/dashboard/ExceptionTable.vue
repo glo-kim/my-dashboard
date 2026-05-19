@@ -96,8 +96,8 @@ import { ref, computed } from 'vue'
 import metrics from '@/src/data/metrics.json'
 
 const props = defineProps<{
-  region?: string | null
-  mode?: string | null
+  region?: string[]
+  mode?: string[]
 }>()
 
 const cityToRegion: Record<string, string> = {
@@ -134,13 +134,16 @@ const typeOptions = ['Delayed', 'Damaged', 'Address Issue', 'Customs Hold', 'Los
 
 const exceptions = computed(() => {
   let result = allExceptions
-  if (props.region) {
-    result = result.filter((e) => getRegionFromOrigin(e.origin) === props.region)
+  if (props.region && props.region.length > 0) {
+    result = result.filter((e) => {
+      const r = getRegionFromOrigin(e.origin)
+      return r !== null && props.region!.includes(r)
+    })
   }
-  if (props.mode) {
+  if (props.mode && props.mode.length > 0) {
     result = result.filter((e) => {
       const s = shipmentsByIdMap.get(e.id)
-      return s?.mode === props.mode
+      return s ? props.mode!.includes(s.mode) : false
     })
   }
   return result

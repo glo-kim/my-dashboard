@@ -77,7 +77,7 @@ import { ref, computed } from 'vue'
 import metrics from '@/src/data/metrics.json'
 
 const props = defineProps<{
-  region?: string | null
+  region?: string[]
 }>()
 
 const regionsByMonth = metrics.regionsByMonth as Record<string, typeof metrics.regions>
@@ -98,8 +98,8 @@ const selectedMonthLabel = computed(() =>
 
 const regions = computed(() => {
   const all = regionsByMonth[selectedMonth.value] ?? []
-  if (!props.region) return all
-  return all.filter((r) => r.region === props.region)
+  if (!props.region || props.region.length === 0) return all
+  return all.filter((r) => props.region!.includes(r.region))
 })
 
 const headers = [

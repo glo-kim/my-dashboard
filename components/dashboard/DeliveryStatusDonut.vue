@@ -38,15 +38,15 @@ import metrics from '@/src/data/metrics.json'
 ChartJS.register(ArcElement, Tooltip, Legend)
 
 const props = defineProps<{
-  region?: string | null
-  mode?: string | null
+  region?: string[]
+  mode?: string[]
 }>()
 
 const regionsByMonth = metrics.regionsByMonth as Record<string, typeof metrics.regions>
 
 const deliveryStatus = computed(() => {
-  const hasRegion = !!props.region
-  const hasMode = !!props.mode
+  const hasRegion = !!props.region && props.region.length > 0
+  const hasMode = !!props.mode && props.mode.length > 0
 
   if (!hasRegion && !hasMode) return metrics.deliveryStatus
 
@@ -55,20 +55,21 @@ const deliveryStatus = computed(() => {
   if (hasMode) {
     // Derive from shipments array for mode filtering
     const filtered = metrics.shipments.filter((s) => {
-      if (s.mode !== props.mode) return false
-      if (hasRegion && s.originRegion !== props.region) return false
+      if (!props.mode!.includes(s.mode)) return false
+      if (hasRegion && !props.region!.includes(s.originRegion)) return false
       return s.onTime !== null
     })
 
     // Scale up total from dailyVolume for accurate counts
-    const modeKey = props.mode!.toLowerCase() as 'ltl' | 'ftl' | 'parcel'
+    const modeKeys = props.mode!.map((m) => m.toLowerCase() as 'ltl' | 'ftl' | 'parcel')
     const mayVolume = metrics.dailyVolume.filter((d) => d.date >= '2026-05-01')
-    let total = mayVolume.reduce((s, d) => s + d[modeKey], 0)
+    let total = mayVolume.reduce((s, d) => s + modeKeys.reduce((ms, mk) => ms + d[mk], 0), 0)
     if (hasRegion) {
       const current = regionsByMonth['2026-05'] ?? []
-      const regionInfo = current.find((r) => r.region === props.region)
+      const selected = current.filter((r) => props.region!.includes(r.region))
       const totalAll = current.reduce((sum, r) => sum + r.shipments, 0)
-      if (regionInfo && totalAll > 0) total = Math.round(total * regionInfo.shipments / totalAll)
+      const selectedTotal = selected.reduce((sum, r) => sum + r.shipments, 0)
+      if (totalAll > 0) total = Math.round(total * selectedTotal / totalAll)
     }
 
     const sampleTotal = filtered.length
@@ -82,13 +83,13 @@ const deliveryStatus = computed(() => {
     return { onTime, late, early, total }
   }
 
-  // Region only
+  // Region only — aggregate selected regions
   const current = regionsByMonth['2026-05'] ?? []
-  const regionInfo = current.find((r) => r.region === props.region)
-  if (!regionInfo) return metrics.deliveryStatus
+  const selected = current.filter((r) => props.region!.includes(r.region))
+  if (selected.length === 0) return metrics.deliveryStatus
 
-  const total = regionInfo.shipments
-  const onTime = Math.round(total * regionInfo.onTimePercent / 100)
+  const total = selected.reduce((sum, r) => sum + r.shipments, 0)
+  const onTime = selected.reduce((sum, r) => sum + Math.round(r.shipments * r.onTimePercent / 100), 0)
   const remaining = total - onTime
   const late = Math.round(remaining * globalLateRatio)
   const early = remaining - late

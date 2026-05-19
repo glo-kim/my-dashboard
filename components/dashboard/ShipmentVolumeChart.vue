@@ -16,7 +16,7 @@
           hide-details
           style="max-width: 140px;"
         />
-        <v-btn-toggle v-if="!mode" v-model="viewMode" density="compact" mandatory variant="outlined" divided>
+        <v-btn-toggle v-if="!mode || mode.length === 0" v-model="viewMode" density="compact" mandatory variant="outlined" divided>
           <v-btn value="stacked" size="small">By Mode</v-btn>
           <v-btn value="total" size="small">Total</v-btn>
         </v-btn-toggle>
@@ -55,19 +55,19 @@ ChartJS.register(
 )
 
 const props = defineProps<{
-  region?: string | null
-  mode?: string | null
+  region?: string[]
+  mode?: string[]
 }>()
 
 const regionsByMonth = metrics.regionsByMonth as Record<string, typeof metrics.regions>
 
 const regionShare = computed(() => {
-  if (!props.region) return 1
+  if (!props.region || props.region.length === 0) return 1
   const current = regionsByMonth['2026-05'] ?? []
-  const regionInfo = current.find((r) => r.region === props.region)
-  const totalShipments = current.reduce((sum, r) => sum + r.shipments, 0)
-  if (!regionInfo || totalShipments === 0) return 1
-  return regionInfo.shipments / totalShipments
+  const total = current.reduce((sum, r) => sum + r.shipments, 0)
+  const selected = current.filter((r) => props.region!.includes(r.region))
+  const selectedTotal = selected.reduce((sum, r) => sum + r.shipments, 0)
+  return total > 0 ? selectedTotal / total : 1
 })
 
 const dailyVolume = computed(() => {
@@ -171,8 +171,8 @@ const subtitleText = computed(() => {
 const modeColors: Record<string, string> = { ltl: '#1B2A4A', ftl: '#4A6FA5', parcel: '#94B3D7' }
 
 function getModeValue(d: { count: number; ltl: number; ftl: number; parcel: number }): number {
-  if (!props.mode) return d.count
-  return d[props.mode.toLowerCase() as 'ltl' | 'ftl' | 'parcel']
+  if (!props.mode || props.mode.length === 0) return d.count
+  return props.mode.reduce((sum, m) => sum + d[m.toLowerCase() as 'ltl' | 'ftl' | 'parcel'], 0)
 }
 
 // Moving average line
@@ -212,18 +212,19 @@ const chartData = computed(() => {
   const data = aggregatedData.value
   const labels = data.map((d) => d.label)
 
-  // When a specific mode is selected, show only that mode
-  if (props.mode) {
-    const modeKey = props.mode.toLowerCase() as 'ltl' | 'ftl' | 'parcel'
-    const datasets: any[] = [
-      {
-        label: props.mode,
+  // When specific mode(s) selected, show stacked bars for those modes
+  if (props.mode && props.mode.length > 0) {
+    const datasets: any[] = props.mode.map((m) => {
+      const modeKey = m.toLowerCase() as 'ltl' | 'ftl' | 'parcel'
+      return {
+        label: m,
         data: data.map((d) => d[modeKey]),
         backgroundColor: modeColors[modeKey],
-        borderRadius: 3,
-        barPercentage: 0.6,
-      },
-    ]
+        stack: props.mode!.length > 1 ? 'shipments' : undefined,
+        borderRadius: props.mode!.length > 1 ? 2 : 3,
+        barPercentage: props.mode!.length > 1 ? 0.7 : 0.6,
+      }
+    })
     if (movingAvg.value) {
       datasets.push({
         label: avgLabel.value,

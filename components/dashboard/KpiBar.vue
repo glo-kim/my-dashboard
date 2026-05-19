@@ -73,82 +73,101 @@ import KpiCard from './KpiCard.vue'
 import metrics from '@/src/data/metrics.json'
 
 const props = defineProps<{
-  region?: string | null
-  mode?: string | null
+  region?: string[]
+  mode?: string[]
 }>()
 
 const regionsByMonth = metrics.regionsByMonth as Record<string, typeof metrics.regions>
 const shipmentsByIdMap = new Map(metrics.shipments.map((s) => [s.id, s]))
 
 const regionData = computed(() => {
-  if (!props.region) return null
+  if (!props.region || props.region.length === 0) return null
   const current = regionsByMonth['2026-05'] ?? []
-  return current.find((r) => r.region === props.region) ?? null
+  return current.filter((r) => props.region!.includes(r.region))
 })
 
 const prevRegionData = computed(() => {
-  if (!props.region) return null
+  if (!props.region || props.region.length === 0) return null
   const prev = regionsByMonth['2026-04'] ?? []
-  return prev.find((r) => r.region === props.region) ?? null
+  return prev.filter((r) => props.region!.includes(r.region))
 })
 
 const regionShare = computed(() => {
-  if (!props.region) return 1
+  if (!props.region || props.region.length === 0) return 1
   const current = regionsByMonth['2026-05'] ?? []
-  const r = current.find((r) => r.region === props.region)
   const total = current.reduce((sum, r) => sum + r.shipments, 0)
-  return r && total > 0 ? r.shipments / total : 1
+  const selected = current.filter((r) => props.region!.includes(r.region))
+  const selectedTotal = selected.reduce((sum, r) => sum + r.shipments, 0)
+  return total > 0 ? selectedTotal / total : 1
 })
 
 const kpis = computed(() => {
-  const hasRegion = !!props.region
-  const hasMode = !!props.mode
+  const hasRegion = !!props.region && props.region.length > 0
+  const hasMode = !!props.mode && props.mode.length > 0
 
   // No filters: use original data
   if (!hasRegion && !hasMode) return metrics.kpis
 
-  // Region only: use regionsByMonth (more accurate curated data)
-  if (hasRegion && !hasMode && regionData.value) {
-    const r = regionData.value
-    const prev = prevRegionData.value
-    const prevShipments = prev?.shipments ?? r.shipments
-    const change = +((((r.shipments - prevShipments) / prevShipments) * 100).toFixed(1))
+  // Region only: aggregate regionsByMonth data
+  if (hasRegion && !hasMode && regionData.value && regionData.value.length > 0) {
+    const selected = regionData.value
+    const prev = prevRegionData.value ?? []
+
+    const totalShipments = selected.reduce((sum, r) => sum + r.shipments, 0)
+    const prevShipments = prev.reduce((sum, r) => sum + r.shipments, 0) || totalShipments
+    const change = +((((totalShipments - prevShipments) / prevShipments) * 100).toFixed(1))
+
+    const otd = totalShipments > 0
+      ? +(selected.reduce((sum, r) => sum + r.onTimePercent * r.shipments, 0) / totalShipments).toFixed(1)
+      : metrics.kpis.onTimeDeliveryRate.value
+    const prevOtd = prev.length > 0 && prevShipments > 0
+      ? +(prev.reduce((sum, r) => sum + r.onTimePercent * r.shipments, 0) / prevShipments).toFixed(1)
+      : otd
+
+    const avgTransit = totalShipments > 0
+      ? +(selected.reduce((sum, r) => sum + r.avgTransitDays * r.shipments, 0) / totalShipments).toFixed(1)
+      : metrics.kpis.avgTransitTime.value
+    const prevAvgTransit = prev.length > 0 && prevShipments > 0
+      ? +(prev.reduce((sum, r) => sum + r.avgTransitDays * r.shipments, 0) / prevShipments).toFixed(1)
+      : avgTransit
+
+    const exceptions = selected.reduce((sum, r) => sum + r.exceptions, 0)
 
     return {
       totalShipments: {
-        value: r.shipments,
+        value: totalShipments,
         previousMonth: prevShipments,
         change,
         period: 'MTD May 2026',
       },
       onTimeDeliveryRate: {
-        value: r.onTimePercent,
+        value: otd,
         target: 95,
-        status: r.onTimePercent >= 95 ? 'green' : r.onTimePercent >= 90 ? 'yellow' : 'red',
-        previousMonth: prev?.onTimePercent ?? r.onTimePercent,
+        status: otd >= 95 ? 'green' : otd >= 90 ? 'yellow' : 'red',
+        previousMonth: prevOtd,
       },
       avgTransitTime: {
-        value: r.avgTransitDays,
-        previousMonth: prev?.avgTransitDays ?? r.avgTransitDays,
-        trend: r.avgTransitDays <= (prev?.avgTransitDays ?? r.avgTransitDays) ? 'down' : 'up',
+        value: avgTransit,
+        previousMonth: prevAvgTransit,
+        trend: avgTransit <= prevAvgTransit ? 'down' : 'up',
         unit: 'days',
       },
       openExceptions: {
-        value: r.exceptions,
-        critical: Math.round(r.exceptions * 0.17),
-        warning: Math.round(r.exceptions * 0.48),
-        info: r.exceptions - Math.round(r.exceptions * 0.17) - Math.round(r.exceptions * 0.48),
+        value: exceptions,
+        critical: Math.round(exceptions * 0.17),
+        warning: Math.round(exceptions * 0.48),
+        info: exceptions - Math.round(exceptions * 0.17) - Math.round(exceptions * 0.48),
       },
     }
   }
 
   // Mode involved (mode-only or region+mode): derive from raw data
-  const modeKey = props.mode!.toLowerCase() as 'ltl' | 'ftl' | 'parcel'
+  const modeKeys = props.mode!.map((m) => m.toLowerCase() as 'ltl' | 'ftl' | 'parcel')
   const mayVolume = metrics.dailyVolume.filter((d) => d.date >= '2026-05-01')
   const aprVolume = metrics.dailyVolume.filter((d) => d.date >= '2026-04-01' && d.date < '2026-05-01')
 
-  let totalShipments = mayVolume.reduce((s, d) => s + d[modeKey], 0)
-  let prevShipments = aprVolume.reduce((s, d) => s + d[modeKey], 0)
+  let totalShipments = mayVolume.reduce((s, d) => s + modeKeys.reduce((ms, mk) => ms + d[mk], 0), 0)
+  let prevShipments = aprVolume.reduce((s, d) => s + modeKeys.reduce((ms, mk) => ms + d[mk], 0), 0)
   if (hasRegion) {
     const share = regionShare.value
     totalShipments = Math.round(totalShipments * share)
@@ -161,8 +180,8 @@ const kpis = computed(() => {
   // OTD & transit from shipments array
   const delivered = metrics.shipments.filter((s) => {
     if (s.onTime === null) return false
-    if (s.mode !== props.mode) return false
-    if (hasRegion && s.originRegion !== props.region) return false
+    if (!props.mode!.includes(s.mode)) return false
+    if (hasRegion && !props.region!.includes(s.originRegion)) return false
     return true
   })
   const otdRate = delivered.length > 0
@@ -179,8 +198,8 @@ const kpis = computed(() => {
   let filteredExceptions = metrics.exceptions.filter((e) => e.status !== 'Resolved')
   filteredExceptions = filteredExceptions.filter((e) => {
     const s = shipmentsByIdMap.get(e.id)
-    if (!s || s.mode !== props.mode) return false
-    if (hasRegion && s.originRegion !== props.region) return false
+    if (!s || !props.mode!.includes(s.mode)) return false
+    if (hasRegion && !props.region!.includes(s.originRegion)) return false
     return true
   })
   const exceptionCount = filteredExceptions.length

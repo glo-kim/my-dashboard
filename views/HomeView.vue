@@ -51,6 +51,6 @@ import DeliveryStatusDonut from '@/components/dashboard/DeliveryStatusDonut.vue'
 import RegionTable from '@/components/dashboard/RegionTable.vue'
 import ExceptionTable from '@/components/dashboard/ExceptionTable.vue'
 
-const selectedRegion = inject<Ref<string | null>>('selectedRegion')!
-const selectedMode = inject<Ref<string | null>>('selectedMode')!
+const selectedRegion = inject<Ref<string[]>>('selectedRegion')!
+const selectedMode = inject<Ref<string[]>>('selectedMode')!
 </script>

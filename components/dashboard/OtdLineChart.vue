@@ -36,22 +36,26 @@ import metrics from '@/src/data/metrics.json'
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
 const props = defineProps<{
-  region?: string | null
+  region?: string[]
 }>()
 
 const regionsByMonth = metrics.regionsByMonth as Record<string, typeof metrics.regions>
 
 const regionOtdOffset = computed(() => {
-  if (!props.region) return 0
+  if (!props.region || props.region.length === 0) return 0
   const current = regionsByMonth['2026-05'] ?? []
-  const regionInfo = current.find((r) => r.region === props.region)
-  if (!regionInfo) return 0
+  const selected = current.filter((r) => props.region!.includes(r.region))
+  if (selected.length === 0) return 0
+  const totalShipments = selected.reduce((sum, r) => sum + r.shipments, 0)
+  const weightedOtd = totalShipments > 0
+    ? selected.reduce((sum, r) => sum + r.onTimePercent * r.shipments, 0) / totalShipments
+    : 0
   const globalOtd = metrics.kpis.onTimeDeliveryRate.value
-  return regionInfo.onTimePercent - globalOtd
+  return weightedOtd - globalOtd
 })
 
 const weeklyOtd = computed(() => {
-  if (!props.region) return metrics.weeklyOtd
+  if (!props.region || props.region.length === 0) return metrics.weeklyOtd
   const offset = regionOtdOffset.value
   return metrics.weeklyOtd.map((w) => ({
     ...w,
