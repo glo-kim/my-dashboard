@@ -95,18 +95,61 @@
 import { ref, computed } from 'vue'
 import metrics from '@/src/data/metrics.json'
 
-const exceptions = metrics.exceptions
+const props = defineProps<{
+  region?: string | null
+  mode?: string | null
+}>()
+
+const cityToRegion: Record<string, string> = {
+  'New York': 'Northeast', 'Boston': 'Northeast', 'Philadelphia': 'Northeast',
+  'Hartford': 'Northeast', 'Newark': 'Northeast', 'Baltimore': 'Northeast',
+  'Pittsburgh': 'Northeast', 'Providence': 'Northeast',
+  'Atlanta': 'Southeast', 'Miami': 'Southeast', 'Charlotte': 'Southeast',
+  'Nashville': 'Southeast', 'Jacksonville': 'Southeast', 'Tampa': 'Southeast',
+  'Raleigh': 'Southeast', 'Richmond': 'Southeast',
+  'Chicago': 'Midwest', 'Detroit': 'Midwest', 'Minneapolis': 'Midwest',
+  'Columbus': 'Midwest', 'Indianapolis': 'Midwest', 'Milwaukee': 'Midwest',
+  'Kansas City': 'Midwest', 'St. Louis': 'Midwest',
+  'Dallas': 'Southwest', 'Houston': 'Southwest', 'Phoenix': 'Southwest',
+  'Denver': 'Southwest', 'San Antonio': 'Southwest', 'Austin': 'Southwest',
+  'Albuquerque': 'Southwest', 'El Paso': 'Southwest',
+  'Los Angeles': 'West', 'San Francisco': 'West', 'Seattle': 'West',
+  'Portland': 'West', 'San Diego': 'West', 'Sacramento': 'West',
+  'Las Vegas': 'West', 'Salt Lake City': 'West',
+}
+
+function getRegionFromOrigin(origin: string): string | null {
+  const city = origin.split(',')[0].trim()
+  return cityToRegion[city] ?? null
+}
+
+const allExceptions = metrics.exceptions
+const shipmentsByIdMap = new Map(metrics.shipments.map((s) => [s.id, s]))
 const expanded = ref<string[]>([])
 const filterType = ref<string | null>(null)
 const filterStatus = ref('all')
 
 const typeOptions = ['Delayed', 'Damaged', 'Address Issue', 'Customs Hold', 'Lost']
 
+const exceptions = computed(() => {
+  let result = allExceptions
+  if (props.region) {
+    result = result.filter((e) => getRegionFromOrigin(e.origin) === props.region)
+  }
+  if (props.mode) {
+    result = result.filter((e) => {
+      const s = shipmentsByIdMap.get(e.id)
+      return s?.mode === props.mode
+    })
+  }
+  return result
+})
+
 const statusCounts = computed(() => ({
-  all: exceptions.length,
-  open: exceptions.filter((e) => e.status === 'Open').length,
-  inProgress: exceptions.filter((e) => e.status === 'In Progress').length,
-  resolved: exceptions.filter((e) => e.status === 'Resolved').length,
+  all: exceptions.value.length,
+  open: exceptions.value.filter((e) => e.status === 'Open').length,
+  inProgress: exceptions.value.filter((e) => e.status === 'In Progress').length,
+  resolved: exceptions.value.filter((e) => e.status === 'Resolved').length,
 }))
 
 const headers = [
@@ -121,7 +164,7 @@ const headers = [
 ]
 
 const filteredExceptions = computed(() => {
-  return exceptions.filter((e) => {
+  return exceptions.value.filter((e) => {
     if (filterType.value && e.type !== filterType.value) return false
     if (filterStatus.value !== 'all' && e.status !== filterStatus.value) return false
     return true

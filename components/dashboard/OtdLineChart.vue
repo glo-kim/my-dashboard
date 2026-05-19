@@ -35,10 +35,33 @@ import metrics from '@/src/data/metrics.json'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
-const weeklyOtd = metrics.weeklyOtd
+const props = defineProps<{
+  region?: string | null
+}>()
+
+const regionsByMonth = metrics.regionsByMonth as Record<string, typeof metrics.regions>
+
+const regionOtdOffset = computed(() => {
+  if (!props.region) return 0
+  const current = regionsByMonth['2026-05'] ?? []
+  const regionInfo = current.find((r) => r.region === props.region)
+  if (!regionInfo) return 0
+  const globalOtd = metrics.kpis.onTimeDeliveryRate.value
+  return regionInfo.onTimePercent - globalOtd
+})
+
+const weeklyOtd = computed(() => {
+  if (!props.region) return metrics.weeklyOtd
+  const offset = regionOtdOffset.value
+  return metrics.weeklyOtd.map((w) => ({
+    ...w,
+    otdPercent: +Math.min(100, Math.max(0, w.otdPercent + offset)).toFixed(1),
+  }))
+})
+
 const weekRange = ref(6)
 
-const filteredData = computed(() => weeklyOtd.slice(-weekRange.value))
+const filteredData = computed(() => weeklyOtd.value.slice(-weekRange.value))
 
 const chartData = computed(() => {
   const data = filteredData.value

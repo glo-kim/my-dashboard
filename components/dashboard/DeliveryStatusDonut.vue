@@ -25,6 +25,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -36,7 +37,64 @@ import metrics from '@/src/data/metrics.json'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
-const deliveryStatus = metrics.deliveryStatus
+const props = defineProps<{
+  region?: string | null
+  mode?: string | null
+}>()
+
+const regionsByMonth = metrics.regionsByMonth as Record<string, typeof metrics.regions>
+
+const deliveryStatus = computed(() => {
+  const hasRegion = !!props.region
+  const hasMode = !!props.mode
+
+  if (!hasRegion && !hasMode) return metrics.deliveryStatus
+
+  const globalLateRatio = metrics.deliveryStatus.late / (metrics.deliveryStatus.late + metrics.deliveryStatus.early)
+
+  if (hasMode) {
+    // Derive from shipments array for mode filtering
+    const filtered = metrics.shipments.filter((s) => {
+      if (s.mode !== props.mode) return false
+      if (hasRegion && s.originRegion !== props.region) return false
+      return s.onTime !== null
+    })
+
+    // Scale up total from dailyVolume for accurate counts
+    const modeKey = props.mode!.toLowerCase() as 'ltl' | 'ftl' | 'parcel'
+    const mayVolume = metrics.dailyVolume.filter((d) => d.date >= '2026-05-01')
+    let total = mayVolume.reduce((s, d) => s + d[modeKey], 0)
+    if (hasRegion) {
+      const current = regionsByMonth['2026-05'] ?? []
+      const regionInfo = current.find((r) => r.region === props.region)
+      const totalAll = current.reduce((sum, r) => sum + r.shipments, 0)
+      if (regionInfo && totalAll > 0) total = Math.round(total * regionInfo.shipments / totalAll)
+    }
+
+    const sampleTotal = filtered.length
+    const sampleOnTime = filtered.filter((s) => s.onTime).length
+    const otdRatio = sampleTotal > 0 ? sampleOnTime / sampleTotal : 0.937
+    const onTime = Math.round(total * otdRatio)
+    const remaining = total - onTime
+    const late = Math.round(remaining * globalLateRatio)
+    const early = remaining - late
+
+    return { onTime, late, early, total }
+  }
+
+  // Region only
+  const current = regionsByMonth['2026-05'] ?? []
+  const regionInfo = current.find((r) => r.region === props.region)
+  if (!regionInfo) return metrics.deliveryStatus
+
+  const total = regionInfo.shipments
+  const onTime = Math.round(total * regionInfo.onTimePercent / 100)
+  const remaining = total - onTime
+  const late = Math.round(remaining * globalLateRatio)
+  const early = remaining - late
+
+  return { onTime, late, early, total }
+})
 
 const colors = {
   onTime: '#0077B6',
@@ -85,26 +143,26 @@ function createDotPattern(color: string): CanvasPattern {
 const latePattern = createDiagonalPattern(colors.late)
 const earlyPattern = createDotPattern(colors.early)
 
-const legendItems = [
-  { label: 'On-Time', value: deliveryStatus.onTime, color: colors.onTime },
-  { label: 'Late', value: deliveryStatus.late, color: colors.late },
-  { label: 'Early', value: deliveryStatus.early, color: colors.early },
-]
+const legendItems = computed(() => [
+  { label: 'On-Time', value: deliveryStatus.value.onTime, color: colors.onTime },
+  { label: 'Late', value: deliveryStatus.value.late, color: colors.late },
+  { label: 'Early', value: deliveryStatus.value.early, color: colors.early },
+])
 
-const chartData = {
+const chartData = computed(() => ({
   labels: ['On-Time', 'Late', 'Early'],
   datasets: [
     {
-      data: [deliveryStatus.onTime, deliveryStatus.late, deliveryStatus.early],
+      data: [deliveryStatus.value.onTime, deliveryStatus.value.late, deliveryStatus.value.early],
       backgroundColor: [colors.onTime, latePattern, earlyPattern],
       borderColor: ['#005F8A', '#A31D1D', '#C56200'],
       borderWidth: 2,
       hoverOffset: 6,
     },
   ],
-}
+}))
 
-const chartOptions = {
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: true,
   cutout: '72%',
@@ -118,13 +176,13 @@ const chartOptions = {
       cornerRadius: 6,
       callbacks: {
         label: (ctx: any) => {
-          const pct = ((ctx.parsed / deliveryStatus.total) * 100).toFixed(1)
+          const pct = ((ctx.parsed / deliveryStatus.value.total) * 100).toFixed(1)
           return `${ctx.label}: ${ctx.parsed.toLocaleString()} (${pct}%)`
         },
       },
     },
   },
-}
+}))
 </script>
 
 <style scoped>

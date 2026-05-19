@@ -16,7 +16,7 @@
           hide-details
           style="max-width: 140px;"
         />
-        <v-btn-toggle v-model="viewMode" density="compact" mandatory variant="outlined" divided>
+        <v-btn-toggle v-if="!mode" v-model="viewMode" density="compact" mandatory variant="outlined" divided>
           <v-btn value="stacked" size="small">By Mode</v-btn>
           <v-btn value="total" size="small">Total</v-btn>
         </v-btn-toggle>
@@ -54,7 +54,33 @@ ChartJS.register(
   LineController, BarController, Title, Tooltip, Legend, Filler
 )
 
-const dailyVolume = metrics.dailyVolume
+const props = defineProps<{
+  region?: string | null
+  mode?: string | null
+}>()
+
+const regionsByMonth = metrics.regionsByMonth as Record<string, typeof metrics.regions>
+
+const regionShare = computed(() => {
+  if (!props.region) return 1
+  const current = regionsByMonth['2026-05'] ?? []
+  const regionInfo = current.find((r) => r.region === props.region)
+  const totalShipments = current.reduce((sum, r) => sum + r.shipments, 0)
+  if (!regionInfo || totalShipments === 0) return 1
+  return regionInfo.shipments / totalShipments
+})
+
+const dailyVolume = computed(() => {
+  const share = regionShare.value
+  if (share === 1) return metrics.dailyVolume
+  return metrics.dailyVolume.map((d) => ({
+    ...d,
+    count: Math.round(d.count * share),
+    ltl: Math.round(d.ltl * share),
+    ftl: Math.round(d.ftl * share),
+    parcel: Math.round(d.parcel * share),
+  }))
+})
 const viewMode = ref('stacked')
 const timePeriod = ref('daily')
 
@@ -83,8 +109,8 @@ function getQuarter(date: Date): string {
 function aggregateBy(period: string): VolumeEntry[] {
   // For daily view, show current month only (May 1 – today)
   const sourceData = period === 'daily'
-    ? dailyVolume.filter((d) => d.date >= '2026-05-01')
-    : dailyVolume
+    ? dailyVolume.value.filter((d) => d.date >= '2026-05-01')
+    : dailyVolume.value
 
   if (period === 'daily') {
     return sourceData.map((d) => {
@@ -142,6 +168,13 @@ const subtitleText = computed(() => {
   return map[timePeriod.value]
 })
 
+const modeColors: Record<string, string> = { ltl: '#1B2A4A', ftl: '#4A6FA5', parcel: '#94B3D7' }
+
+function getModeValue(d: { count: number; ltl: number; ftl: number; parcel: number }): number {
+  if (!props.mode) return d.count
+  return d[props.mode.toLowerCase() as 'ltl' | 'ftl' | 'parcel']
+}
+
 // Moving average line
 const movingAvg = computed(() => {
   const data = aggregatedData.value
@@ -149,11 +182,11 @@ const movingAvg = computed(() => {
 
   if (timePeriod.value === 'daily') {
     // 7-day moving average for daily
-    const filtered = dailyVolume.filter((d) => d.date >= '2026-05-01')
+    const filtered = dailyVolume.value.filter((d) => d.date >= '2026-05-01')
     return filtered.map((_, i, arr) => {
       const start = Math.max(0, i - 6)
       const window = arr.slice(start, i + 1)
-      return +(window.reduce((s, d) => s + d.count, 0) / window.length).toFixed(1)
+      return +(window.reduce((s, d) => s + getModeValue(d), 0) / window.length).toFixed(1)
     })
   }
 
@@ -161,7 +194,7 @@ const movingAvg = computed(() => {
   return data.map((_, i, arr) => {
     const start = Math.max(0, i - 2)
     const window = arr.slice(start, i + 1)
-    return +(window.reduce((s, d) => s + d.count, 0) / window.length).toFixed(1)
+    return +(window.reduce((s, d) => s + getModeValue(d), 0) / window.length).toFixed(1)
   })
 })
 
@@ -178,6 +211,35 @@ const avgLabel = computed(() => {
 const chartData = computed(() => {
   const data = aggregatedData.value
   const labels = data.map((d) => d.label)
+
+  // When a specific mode is selected, show only that mode
+  if (props.mode) {
+    const modeKey = props.mode.toLowerCase() as 'ltl' | 'ftl' | 'parcel'
+    const datasets: any[] = [
+      {
+        label: props.mode,
+        data: data.map((d) => d[modeKey]),
+        backgroundColor: modeColors[modeKey],
+        borderRadius: 3,
+        barPercentage: 0.6,
+      },
+    ]
+    if (movingAvg.value) {
+      datasets.push({
+        label: avgLabel.value,
+        data: movingAvg.value,
+        type: 'line' as const,
+        borderColor: '#F57C00',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        tension: 0.3,
+        order: 0,
+      })
+    }
+    return { labels, datasets }
+  }
 
   if (viewMode.value === 'stacked') {
     const datasets: any[] = [
