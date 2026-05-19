@@ -119,7 +119,8 @@ const cityToRegion: Record<string, string> = {
 }
 
 function getRegionFromOrigin(origin: string): string | null {
-  const city = origin.split(',')[0].trim()
+  const city = origin.split(',')[0]?.trim()
+  if (!city) return null
   return cityToRegion[city] ?? null
 }
 
