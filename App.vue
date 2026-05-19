@@ -63,8 +63,93 @@
           size="small"
           @click="toggleTheme"
         />
+        <v-badge
+          :model-value="hasActiveFilters"
+          dot
+          color="primary"
+          offset-x="4"
+          offset-y="4"
+        >
+          <v-btn
+            icon="mdi-filter-variant"
+            variant="text"
+            size="small"
+            @click="filterDrawer = !filterDrawer"
+          />
+        </v-badge>
       </template>
     </v-app-bar>
+
+    <v-navigation-drawer
+      v-model="filterDrawer"
+      location="right"
+      temporary
+      width="300"
+    >
+      <div class="pa-4">
+        <div class="d-flex align-center justify-space-between mb-4">
+          <div class="text-subtitle-1 font-weight-bold">Filters</div>
+          <v-btn
+            v-if="hasActiveFilters"
+            variant="text"
+            size="small"
+            prepend-icon="mdi-filter-remove"
+            @click="resetFilters"
+          >
+            Reset
+          </v-btn>
+        </div>
+        <v-select
+          v-model="selectedRegion"
+          :items="regionOptions"
+          item-title="label"
+          item-value="value"
+          label="Region"
+          density="compact"
+          variant="outlined"
+          hide-details
+          prepend-inner-icon="mdi-map-marker-outline"
+          class="mb-4"
+        />
+        <v-select
+          v-model="selectedMode"
+          :items="modeOptions"
+          item-title="label"
+          item-value="value"
+          label="Shipment Mode"
+          density="compact"
+          variant="outlined"
+          hide-details
+          prepend-inner-icon="mdi-truck-outline"
+          class="mb-4"
+        />
+        <v-divider class="my-4" />
+        <div v-if="hasActiveFilters" class="text-caption text-medium-emphasis">
+          <div class="font-weight-medium mb-2">Active filters:</div>
+          <v-chip
+            v-if="selectedRegion"
+            size="small"
+            closable
+            class="mr-1 mb-1"
+            @click:close="selectedRegion = null"
+          >
+            {{ selectedRegion }}
+          </v-chip>
+          <v-chip
+            v-if="selectedMode"
+            size="small"
+            closable
+            class="mr-1 mb-1"
+            @click:close="selectedMode = null"
+          >
+            {{ selectedMode }}
+          </v-chip>
+        </div>
+        <div v-else class="text-caption text-medium-emphasis">
+          No filters applied. Showing all data.
+        </div>
+      </div>
+    </v-navigation-drawer>
 
     <v-main class="bg-background">
       <router-view />
@@ -73,15 +158,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, provide } from 'vue'
 import { useTheme } from 'vuetify'
 
 const theme = useTheme()
 const drawer = ref(true)
 const rail = ref(false)
 const activeNav = ref('overview')
+const filterDrawer = ref(false)
 
 const isDark = computed(() => theme.global.current.value.dark)
+
+// --- Filter state ---
+const selectedRegion = ref<string | null>(null)
+const selectedMode = ref<string | null>(null)
+
+const regionOptions = [
+  { label: 'All Regions', value: null },
+  { label: 'Northeast', value: 'Northeast' },
+  { label: 'Southeast', value: 'Southeast' },
+  { label: 'Midwest', value: 'Midwest' },
+  { label: 'Southwest', value: 'Southwest' },
+  { label: 'West', value: 'West' },
+]
+
+const modeOptions = [
+  { label: 'All Modes', value: null },
+  { label: 'LTL', value: 'LTL' },
+  { label: 'FTL', value: 'FTL' },
+  { label: 'Parcel', value: 'Parcel' },
+]
+
+const hasActiveFilters = computed(() => !!selectedRegion.value || !!selectedMode.value)
+
+function resetFilters() {
+  selectedRegion.value = null
+  selectedMode.value = null
+}
+
+provide('selectedRegion', selectedRegion)
+provide('selectedMode', selectedMode)
 
 const navItems = [
   { title: 'Overview', icon: 'mdi-view-dashboard-outline', value: 'overview' },
