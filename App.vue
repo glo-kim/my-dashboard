@@ -8,7 +8,7 @@
       class="app-sidebar"
     >
       <v-list-item
-        class="px-4 py-3"
+        class="sidebar-logo"
         :prepend-icon="rail ? 'mdi-truck-fast-outline' : undefined"
       >
         <template v-if="!rail">
@@ -296,6 +296,45 @@ function scrollTo(section: string) {
 }
 .v-navigation-drawer .v-icon {
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* Sidebar logo */
+.sidebar-logo {
+  padding: 16px 16px;
+  justify-content: center;
+}
+
+/* Rail (collapsed) mode alignment */
+.app-sidebar.v-navigation-drawer--rail .sidebar-logo {
+  padding: 16px;
+  justify-content: center;
+}
+.app-sidebar.v-navigation-drawer--rail .sidebar-logo .v-list-item__prepend {
+  margin: 0;
+}
+.app-sidebar.v-navigation-drawer--rail .sidebar-logo .v-list-item__prepend .v-icon {
+  margin-inline-end: 0;
+}
+.app-sidebar.v-navigation-drawer--rail .v-list-item {
+  padding-inline: 0 !important;
+  justify-content: center;
+}
+.app-sidebar.v-navigation-drawer--rail .v-list-item .v-list-item__prepend {
+  margin-inline-end: 0;
+}
+.app-sidebar.v-navigation-drawer--rail .v-list-item .v-list-item__prepend .v-icon {
+  margin-inline-start: 24px;
+  margin-inline-end: 16px;
+}
+.app-sidebar.v-navigation-drawer--rail .v-list--nav {
+  padding-inline: 0;
+}
+.app-sidebar.v-navigation-drawer--rail .v-list-item.mx-2 {
+  margin-inline: 8px !important;
+}
+.app-sidebar.v-navigation-drawer--rail .nav-item-active {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px;
 }
 .filter-panel-body .v-expansion-panel-text__wrapper {
   padding: 0 !important;
