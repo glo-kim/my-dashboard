@@ -84,7 +84,6 @@
     <v-navigation-drawer
       v-model="filterDrawer"
       location="right"
-      temporary
       width="300"
     >
       <div class="pa-4">
@@ -103,17 +102,18 @@
         </div>
         <v-expansion-panels v-model="filterPanels" multiple flat>
           <v-expansion-panel value="region">
-            <v-expansion-panel-title class="px-0 py-2 text-body-2 font-weight-bold">
+            <v-expansion-panel-title class="px-0 py-2 text-body-2 font-weight-bold filter-panel-title">
                 <v-checkbox
-                  class="filter-checkbox mr-2"
+                  class="filter-checkbox parent-checkbox"
                   density="compact"
                   hide-details
                   :model-value="selectedRegion.length === regionOptions.length"
                   :indeterminate="selectedRegion.length > 0 && selectedRegion.length < regionOptions.length"
+                  @click.stop
                   @update:model-value="toggleSelectAll('region', $event)"
                   aria-label="Select all regions"
                 />
-                <v-icon size="small" class="mr-2">mdi-map-marker-outline</v-icon>
+                <v-icon size="small" class="parent-label-icon">mdi-map-marker-outline</v-icon>
                 <span>Region</span>
                 <template #actions="{ expanded }">
                   <v-icon :icon="expanded ? 'mdi-minus' : 'mdi-plus'" size="small" />
@@ -127,23 +127,24 @@
                 :model-value="selectedRegion.includes(r)"
                 density="compact"
                 hide-details
-                class="filter-checkbox"
+                class="filter-checkbox child-checkbox"
                 @update:model-value="toggleFilter('region', r, $event)"
               />
             </v-expansion-panel-text>
           </v-expansion-panel>
           <v-expansion-panel value="mode">
-            <v-expansion-panel-title class="px-0 py-2 text-body-2 font-weight-bold">
+            <v-expansion-panel-title class="px-0 py-2 text-body-2 font-weight-bold filter-panel-title">
                 <v-checkbox
-                  class="filter-checkbox mr-2"
+                  class="filter-checkbox parent-checkbox"
                   density="compact"
                   hide-details
                   :model-value="selectedMode.length === modeOptions.length"
                   :indeterminate="selectedMode.length > 0 && selectedMode.length < modeOptions.length"
+                  @click.stop
                   @update:model-value="toggleSelectAll('mode', $event)"
                   aria-label="Select all shipment modes"
                 />
-                <v-icon size="small" class="mr-2">mdi-truck-outline</v-icon>
+                <v-icon size="small" class="parent-label-icon">mdi-truck-outline</v-icon>
                 <span>Shipment Mode</span>
                 <template #actions="{ expanded }">
                   <v-icon :icon="expanded ? 'mdi-minus' : 'mdi-plus'" size="small" />
@@ -157,7 +158,7 @@
                 :model-value="selectedMode.includes(m)"
                 density="compact"
                 hide-details
-                class="filter-checkbox"
+                class="filter-checkbox child-checkbox"
                 @update:model-value="toggleFilter('mode', m, $event)"
               />
             </v-expansion-panel-text>
@@ -171,7 +172,9 @@
             :key="'region-' + r"
             size="small"
             closable
-            class="mr-1 mb-1"
+            color="primary"
+            variant="tonal"
+            class="mr-1 mb-1 active-filter-chip"
             @click:close="selectedRegion = selectedRegion.filter(v => v !== r)"
           >
             {{ r }}
@@ -181,7 +184,9 @@
             :key="'mode-' + m"
             size="small"
             closable
-            class="mr-1 mb-1"
+            color="primary"
+            variant="tonal"
+            class="mr-1 mb-1 active-filter-chip"
             @click:close="selectedMode = selectedMode.filter(v => v !== m)"
           >
             {{ m }}
@@ -297,9 +302,56 @@ function scrollTo(section: string) {
 }
 .filter-checkbox .v-label {
   font-size: 0.8125rem;
+  margin-inline-start: 8px;
 }
 .filter-checkbox {
-  margin-top: -4px;
-  margin-bottom: -4px;
+  flex: none;
+}
+.filter-checkbox .v-selection-control {
+  min-height: unset;
+  gap: 0;
+}
+/* Parent checkbox: 8px gap to icon+label, matching child checkboxes */
+.parent-checkbox {
+  margin-right: 0;
+}
+.parent-checkbox .v-selection-control__wrapper {
+  margin-right: 8px;
+}
+.filter-panel-title .parent-label-icon {
+  margin-right: 4px;
+}
+/* Child checkboxes: indented + 8px vertical gap */
+.child-checkbox {
+  padding-left: 32px;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.child-checkbox + .child-checkbox {
+  margin-top: 0;
+}
+.filter-panel-body .v-expansion-panel-text__wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px !important;
+  padding-bottom: 8px !important;
+}
+.filter-checkbox .v-selection-control__input i {
+  color: #1B2A4A !important;
+  opacity: 0.7;
+}
+.filter-checkbox .v-selection-control__input .mdi-checkbox-marked,
+.filter-checkbox .v-selection-control__input .mdi-minus-box {
+  color: #1B2A4A !important;
+  opacity: 1;
+}
+/* Active filter chips */
+.active-filter-chip .v-chip__close {
+  color: #1B2A4A;
+  opacity: 0.8;
+}
+.active-filter-chip .v-chip__close:hover {
+  opacity: 1;
 }
 </style>
