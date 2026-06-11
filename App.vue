@@ -113,7 +113,6 @@
                   @update:model-value="toggleSelectAll('region', $event)"
                   aria-label="Select all regions"
                 />
-                <v-icon size="small" class="parent-label-icon">mdi-map-marker-outline</v-icon>
                 <span>Region</span>
                 <template #actions="{ expanded }">
                   <v-icon :icon="expanded ? 'mdi-minus' : 'mdi-plus'" size="small" />
@@ -144,7 +143,6 @@
                   @update:model-value="toggleSelectAll('mode', $event)"
                   aria-label="Select all shipment modes"
                 />
-                <v-icon size="small" class="parent-label-icon">mdi-truck-outline</v-icon>
                 <span>Shipment Mode</span>
                 <template #actions="{ expanded }">
                   <v-icon :icon="expanded ? 'mdi-minus' : 'mdi-plus'" size="small" />
@@ -363,7 +361,7 @@ function scrollTo(section: string) {
   margin-right: 8px;
 }
 .filter-panel-title .parent-label-icon {
-  margin-right: 4px;
+  margin-right: 0px;
 }
 /* Child checkboxes: indented + 8px vertical gap */
 .child-checkbox {
