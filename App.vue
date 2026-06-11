@@ -360,9 +360,6 @@ function scrollTo(section: string) {
 .parent-checkbox .v-selection-control__wrapper {
   margin-right: 8px;
 }
-.filter-panel-title .parent-label-icon {
-  margin-right: 0px;
-}
 /* Child checkboxes: indented + 8px vertical gap */
 .child-checkbox {
   padding-left: 32px;
