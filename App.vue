@@ -306,31 +306,36 @@ function scrollTo(section: string) {
 
 /* Rail (collapsed) mode alignment */
 .app-sidebar.v-navigation-drawer--rail .sidebar-logo {
-  padding: 16px;
+  padding-inline: 24px !important;
+  padding-top: 16px;
+  padding-bottom: 16px;
   justify-content: center;
 }
 .app-sidebar.v-navigation-drawer--rail .sidebar-logo .v-list-item__prepend {
-  margin: 0;
+  margin-inline-end: 0;
 }
 .app-sidebar.v-navigation-drawer--rail .sidebar-logo .v-list-item__prepend .v-icon {
+  margin-inline-start: 0;
   margin-inline-end: 0;
 }
 .app-sidebar.v-navigation-drawer--rail .v-list-item {
-  padding-inline: 0 !important;
+  padding-inline-start: 30px !important;
+  padding-inline-end: 0px !important;
   justify-content: center;
 }
 .app-sidebar.v-navigation-drawer--rail .v-list-item .v-list-item__prepend {
   margin-inline-end: 0;
 }
 .app-sidebar.v-navigation-drawer--rail .v-list-item .v-list-item__prepend .v-icon {
-  margin-inline-start: 24px;
-  margin-inline-end: 16px;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
 }
 .app-sidebar.v-navigation-drawer--rail .v-list--nav {
-  padding-inline: 0;
+  padding-inline-start: 8px !important;
+  padding-inline-end: 8px !important;
 }
 .app-sidebar.v-navigation-drawer--rail .v-list-item.mx-2 {
-  margin-inline: 8px !important;
+  margin-inline: 0px !important;
 }
 .app-sidebar.v-navigation-drawer--rail .nav-item-active {
   background: rgba(255, 255, 255, 0.15) !important;
