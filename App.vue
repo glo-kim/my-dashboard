@@ -57,6 +57,12 @@
         {{ currentDate }}
       </v-app-bar-title>
       <template #append>
+        <v-btn
+          :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+          variant="text"
+          size="small"
+          @click="toggleTheme"
+        />
         <v-badge
           :model-value="hasActiveFilters"
           dot
@@ -72,12 +78,6 @@
             @click="filterDrawer = !filterDrawer"
           />
         </v-badge>
-        <v-btn
-          :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-          variant="text"
-          size="small"
-          @click="toggleTheme"
-        />
       </template>
     </v-app-bar>
 
