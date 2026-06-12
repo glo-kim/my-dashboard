@@ -51,18 +51,12 @@
       </template>
     </v-navigation-drawer>
 
-    <v-app-bar flat density="compact" color="surface" border="b">
+    <v-app-bar flat density="compact" color="surface" border="b" class="app-topbar">
       <v-app-bar-title class="text-body-1 text-medium-emphasis">
         <v-icon size="small" class="mr-1">mdi-calendar</v-icon>
         {{ currentDate }}
       </v-app-bar-title>
       <template #append>
-        <v-btn
-          :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-          variant="text"
-          size="small"
-          @click="toggleTheme"
-        />
         <v-badge
           :model-value="hasActiveFilters"
           dot
@@ -78,6 +72,12 @@
             @click="filterDrawer = !filterDrawer"
           />
         </v-badge>
+        <v-btn
+          :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+          variant="text"
+          size="small"
+          @click="toggleTheme"
+        />
       </template>
     </v-app-bar>
 
@@ -339,9 +339,6 @@ function scrollTo(section: string) {
   background: rgba(255, 255, 255, 0.15) !important;
   border-radius: 8px;
 }
-.filter-panel-body .v-expansion-panel-text__wrapper {
-  padding: 0 !important;
-}
 .filter-checkbox .v-label {
   font-size: 0.8125rem;
   margin-inline-start: 8px;
@@ -373,8 +370,7 @@ function scrollTo(section: string) {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-top: 4px !important;
-  padding-bottom: 8px !important;
+  padding: 4px 0 8px 0 !important;
 }
 .filter-checkbox .v-selection-control__input i {
   color: #1B2A4A !important;
@@ -392,5 +388,13 @@ function scrollTo(section: string) {
 }
 .active-filter-chip .v-chip__close:hover {
   opacity: 1;
+}
+/* App bar horizontal padding to align with dashboard cards */
+.app-topbar > .v-toolbar__content {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+.app-topbar > .v-toolbar__content > .v-toolbar-title {
+  margin-inline-start: 0px;
 }
 </style>
